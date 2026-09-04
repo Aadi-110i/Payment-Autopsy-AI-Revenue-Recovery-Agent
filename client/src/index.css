@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #0B0B0B;
+    --color-surface: #111111;
+    --color-border: #1E1E1E;
+    --color-text: #F5F5F0;
+    --color-text-muted: #8A8A8A;
+    --color-accent: #D6A62A;
+    --color-accent-hover: #E8B842;
+  }
+
+  * {
+    @apply border-autopsy-border;
+  }
+
+  body {
+    @apply bg-autopsy-bg text-autopsy-text antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-autopsy-surface border border-autopsy-border rounded-xl p-6 transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:border-autopsy-accent/30 hover:shadow-[0_0_0_1px_theme(colors.autopsy.accent/20)];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-autopsy-bg;
+  }
+
+  .btn-primary {
+    @apply btn bg-autopsy-accent text-autopsy-bg hover:bg-autopsy-accent-hover focus:ring-autopsy-accent;
+  }
+
+  .btn-secondary {
+    @apply btn bg-autopsy-surface border border-autopsy-border text-autopsy-text hover:bg-autopsy-border focus:ring-autopsy-border;
+  }
+
+  .btn-ghost {
+    @apply btn text-autopsy-text-muted hover:text-autopsy-text hover:bg-autopsy-border focus:ring-autopsy-border;
+  }
+
+  .btn-danger {
+    @apply btn bg-autopsy-error/10 text-autopsy-error border border-autopsy-error/20 hover:bg-autopsy-error/20 focus:ring-autopsy-error;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 bg-autopsy-bg border border-autopsy-border rounded-lg text-autopsy-text placeholder-autopsy-text-muted focus:outline-none focus:ring-2 focus:ring-autopsy-accent focus:border-transparent transition-all duration-150;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-autopsy-text-muted mb-1;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-autopsy-success/10 text-autopsy-success;
+  }
+
+  .badge-warning {
+    @apply badge bg-autopsy-warning/10 text-autopsy-warning;
+  }
+
+  .badge-error {
+    @apply badge bg-autopsy-error/10 text-autopsy-error;
+  }
+
+  .badge-info {
+    @apply badge bg-autopsy-info/10 text-autopsy-info;
+  }
+
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-autopsy-border;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-left text-autopsy-text-muted font-medium border-b border-autopsy-border bg-autopsy-bg/50;
+  }
+
+  .table td {
+    @apply px-4 py-3 border-b border-autopsy-border/50;
+  }
+
+  .table tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table tbody tr {
+    @apply hover:bg-autopsy-border/30 transition-colors;
+  }
+
+  .metric-card {
+    @apply card relative overflow-hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-autopsy-accent/50 to-transparent;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.autopsy.border) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme(colors.autopsy.border);
+    border-radius: 3px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-out, slideUp 0.3s ease-out;
+  }
+}
