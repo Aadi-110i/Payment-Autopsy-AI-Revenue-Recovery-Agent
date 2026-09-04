@@ -2,22 +2,27 @@
 
 **Diagnose failed payments. Recover revenue intelligently.**
 
-An AI-powered revenue recovery system for the Razorpay AI Builder Internship 2026 (AI Revenue Recovery Track). This system goes beyond simple retry logic to perform automated payment autopsies, estimate recoverability, and execute bounded recovery actions with full audit trails.
+An AI-powered revenue recovery system built for the Razorpay AI Builder Internship 2026 (AI Revenue Recovery Track). The system goes beyond simple retry logic to perform automated payment autopsies, estimate recoverability, and execute bounded recovery actions with full audit trails.
 
-## 🎯 Problem Statement
+---
 
-Payment failures are a significant source of lost revenue. Traditional retry systems use simple rules (retry after 30 minutes) without understanding:
-- **Why** the payment failed
-- **Whether** recovery is worthwhile
-- **What** intervention is most effective
-- **When** to stop to avoid wasting resources
+## Problem Statement
 
-## 💡 Solution
+Payment failures represent significant lost revenue. Traditional retry systems use fixed rules (retry after 30 minutes) without understanding:
+
+- Why the payment failed
+- Whether recovery is worthwhile
+- What intervention is most effective
+- When to stop to avoid wasting resources
+
+---
+
+## Solution
 
 Autopsy implements a complete revenue recovery pipeline:
 
 ```
-PAYMENT FAILURE → ROOT CAUSE → RECOVERABILITY → INTERVENTION → BOUNDED ACTION → OUTCOME → LEARNING
+PAYMENT FAILURE -> ROOT CAUSE -> RECOVERABILITY -> INTERVENTION -> BOUNDED ACTION -> OUTCOME -> LEARNING
 ```
 
 ### Key Differentiators
@@ -31,7 +36,9 @@ PAYMENT FAILURE → ROOT CAUSE → RECOVERABILITY → INTERVENTION → BOUNDED A
 | No baseline comparison | Measures vs simple retry baseline |
 | No safety boundaries | Policy engine enforces hard limits |
 
-## 🏗️ Architecture
+---
+
+## Architecture
 
 ```
 ┌──────────────────────┐
@@ -75,7 +82,9 @@ Engine   Engine Engine
 └──────────────────────┘
 ```
 
-## 🛠️ Tech Stack
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -89,24 +98,26 @@ Engine   Engine Engine
 | AI | LLM API with structured JSON responses |
 | Testing | Vitest, Supertest, Playwright |
 
-## 📋 Core Features
+---
+
+## Core Features
 
 ### 1. Payment Autopsy Engine
 - Classifies failures into 11 categories with confidence scores
-- Evidence-based diagnosis (direct + inferred)
+- Evidence-based diagnosis (direct and inferred)
 - Merchant-wide degradation detection
 - Human-readable explanations
 
 ### 2. Recoverability Scoring (0-100)
 - 11 weighted factors (customer history, failure type, amount, time, etc.)
-- Explainable score with positive/negative factors
-- Baseline comparison (simple retry strategy)
+- Explainable score with positive and negative factors
+- Baseline comparison against simple retry strategy
 
 ### 3. Recovery Policy Engine
-- **Hard stops**: Fraud, max retries (2), low recoverability (<30)
-- **Approval required**: High-value (>₹50K), repeated attempts
-- **Cooldowns**: Customer contact (24h), merchant degradation (1h)
-- **Action mapping**: Category → appropriate intervention
+- Hard stops: Fraud, max retries (2), low recoverability (<30)
+- Approval required: High-value (>₹50K), repeated attempts
+- Cooldowns: Customer contact (24h), merchant degradation (1h)
+- Action mapping: Category to appropriate intervention
 
 ### 4. Bounded Recovery Actions
 1. `RETRY_PAYMENT` - Immediate retry
@@ -131,9 +142,11 @@ Every decision recorded with:
 ### 7. Merchant Incident Detection
 - Detects payment rail degradation
 - Prevents blind retries during systemic issues
-- Recommends delayed retries + merchant notification
+- Recommends delayed retries and merchant notification
 
-## 🚀 Quick Start
+---
+
+## Quick Start
 
 ### Prerequisites
 - Node.js 20+
@@ -196,27 +209,33 @@ The system includes a full demo with:
 - Hidden patterns (UPI degradation, fraud, etc.)
 - One-click simulation runner
 
-Click **"Run Simulation"** on the Demo page to see the complete pipeline in action.
+Click "Run Simulation" on the Demo page to see the complete pipeline in action.
 
-## 📊 Dashboard Sections
+---
+
+## Dashboard Sections
 
 1. **Revenue Overview** - At risk, recoverable, recovered, rate, ROI
 2. **Failure Intelligence** - Categories, payment methods, time series, degradation
-3. **Recovery Pipeline** - Kanban: New → Autopsy → Ready → Scheduled → Recovered/Escalated/Stopped
+3. **Recovery Pipeline** - Kanban: New, Autopsy, Ready, Scheduled, Recovered, Escalated, Stopped
 4. **Recent Cases** - Table with inline actions
 5. **AI Insights** - Automated pattern detection
 
-## 🔬 Case Detail Page
+---
+
+## Case Detail Page
 
 Click any case to see:
-- Payment context & customer history
+- Payment context and customer history
 - Failure autopsy with evidence
 - Recoverability score breakdown
 - Policy decision with applied rules
-- Executed actions & outcomes
+- Executed actions and outcomes
 - Visual audit timeline
 
-## 🧪 Testing
+---
+
+## Testing
 
 ```bash
 # Unit tests
@@ -229,26 +248,32 @@ npm run test:e2e
 npm run lint
 ```
 
-## 📈 Evaluation Methodology
+---
+
+## Evaluation Methodology
 
 The system measures:
 - **Recovery Rate**: Recovered / Recoverable
 - **Improvement vs Baseline**: AI vs simple retry
 - **Unnecessary Retry Rate**: Retries beyond 2nd attempt that failed
-- **False Intervention Rate**: Actions that didn't lead to recovery
+- **False Intervention Rate**: Actions that did not lead to recovery
 - **Avg Time to Recovery**: From failure to success
-- **Net Recovered Value**: Revenue recovered - contact costs
+- **Net Recovered Value**: Revenue recovered minus contact costs
 
-## 🔒 Safety Boundaries
+---
 
-- **No LLM financial actions**: All actions go through policy engine
-- **Idempotency keys**: Prevent duplicate executions
-- **Amount limits**: Autonomous actions capped at ₹50K
-- **Retry limits**: Max 2 autonomous retries
-- **Fraud isolation**: Suspected fraud → immediate escalation
-- **Approval workflow**: High-value/low-confidence → human review
+## Safety Boundaries
 
-## 📁 Project Structure
+- No LLM financial actions: All actions go through policy engine
+- Idempotency keys: Prevent duplicate executions
+- Amount limits: Autonomous actions capped at ₹50K
+- Retry limits: Maximum 2 autonomous retries
+- Fraud isolation: Suspected fraud escalated immediately
+- Approval workflow: High-value or low-confidence cases require human review
+
+---
+
+## Project Structure
 
 ```
 autopsy-recovery/
@@ -268,12 +293,14 @@ autopsy-recovery/
 │   │   ├── middleware/     # Express middleware
 │   │   ├── queues/         # BullMQ queues
 │   │   └── utils/          # Helpers
-│   └── prisma/             # Database schema & seed
+│   └── prisma/             # Database schema and seed
 ├── packages/shared/        # Shared TypeScript types
 └── README.md
 ```
 
-## 🎭 Demo Scenarios
+---
+
+## Demo Scenarios
 
 The seed data includes 8 scenarios demonstrating different agent decisions:
 
@@ -285,10 +312,12 @@ The seed data includes 8 scenarios demonstrating different agent decisions:
 | D | Expired card | Request alt. method |
 | E | High-value (>₹50K) | Escalate to human |
 | F | Repeated failure (3+) | Stop recovery |
-| G | Suspected fraud | Stop + escalate risk |
-| H | Recoverable after delay | Schedule retry → success |
+| G | Suspected fraud | Stop and escalate risk |
+| H | Recoverable after delay | Schedule retry to success |
 
-## 🚧 Known Limitations
+---
+
+## Known Limitations
 
 - Demo mode uses simulated payment outcomes
 - Real Razorpay webhook processing requires ngrok/tunnel
@@ -296,23 +325,27 @@ The seed data includes 8 scenarios demonstrating different agent decisions:
 - Single merchant in demo (multi-tenant ready in schema)
 - No authentication in demo (add NextAuth/Clerk for production)
 
-## 🔮 Future Improvements
+---
 
-- [ ] Real LLM integration for explanation generation
-- [ ] Multi-merchant support with isolated data
-- [ ] Advanced ML for recoverability prediction
-- [ ] Customer communication preferences
-- [ ] A/B testing framework for policies
-- [ ] Slack/Teams alerts for incidents
-- [ ] Historical trend analysis
-- [ ] Custom policy builder UI
+## Future Improvements
 
-## 📄 License
+- Real LLM integration for explanation generation
+- Multi-merchant support with isolated data
+- Advanced ML for recoverability prediction
+- Customer communication preferences
+- A/B testing framework for policies
+- Slack/Teams alerts for incidents
+- Historical trend analysis
+- Custom policy builder UI
+
+---
+
+## License
 
 MIT License - Built for Razorpay AI Builder Internship 2026
 
 ---
 
-**Why this is not just another payment retry bot:**
+## Why This Is Not Just Another Payment Retry Bot
 
-Autopsy is a **revenue operations product**, not a retry script. It diagnoses *why* payments fail using evidence, estimates *whether* recovery makes economic sense, selects *constrained* interventions based on policy, executes *safely* with idempotency, *stops* when continued effort is wasteful, and *measures* actual revenue impact against a baseline. Every decision is auditable and explainable—making it suitable for production financial systems where accountability matters.
+Autopsy is a revenue operations product, not a retry script. It diagnoses why payments fail using evidence, estimates whether recovery makes economic sense, selects constrained interventions based on policy, executes safely with idempotency, stops when continued effort is wasteful, and measures actual revenue impact against a baseline. Every decision is auditable and explainable, making it suitable for production financial systems where accountability matters.
