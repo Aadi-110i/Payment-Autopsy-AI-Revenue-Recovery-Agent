@@ -1,0 +1,421 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FailureCategory {
+  temporary_gateway_issue
+  bank_timeout
+  network_issue
+  authentication_failure
+  insufficient_balance
+  expired_card
+  invalid_payment_method
+  customer_abandonment
+  repeated_failure
+  unknown
+  suspected_fraud
+}
+
+enum RecoveryActionType {
+  RETRY_PAYMENT
+  SEND_PAYMENT_LINK
+  SEND_RECOVERY_NOTIFICATION
+  SCHEDULE_RETRY
+  REQUEST_ALTERNATIVE_PAYMENT_METHOD
+  ESCALATE_TO_HUMAN
+  STOP_RECOVERY
+}
+
+enum RecoveryCaseStatus {
+  NEW
+  AUTOPSY
+  RECOVERY_READY
+  ACTION_SCHEDULED
+  RECOVERED
+  ESCALATED
+  STOPPED
+  AWAITING_APPROVAL
+}
+
+enum AuditActor {
+  system
+  agent
+  human
+  webhook
+  scheduler
+}
+
+enum RecoveryActionStatus {
+  pending
+  executing
+  completed
+  failed
+  cancelled
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum IncidentType {
+  degradation
+  outage
+  anomaly
+}
+
+enum IncidentStatus {
+  active
+  mitigating
+  resolved
+}
+
+model Merchant {
+  id            String   @id @default(cuid())
+  name          String
+  razorpayKeyId String   @unique
+  webhookSecret String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customers     Customer[]
+  payments      Payment[]
+  recoveryCases RecoveryCase[]
+  policyRules   PolicyRule[]
+  incidents     MerchantIncident[]
+
+  @@index([razorpayKeyId])
+}
+
+model Customer {
+  id                   String   @id @default(cuid())
+  merchantId           String
+  razorpayCustomerId   String?  @unique
+  email                String?
+  phone                String?
+  lifetimeValue        Float    @default(0)
+  successfulPayments   Int      @default(0)
+  totalPayments        Int      @default(0)
+  lastPaymentAt        DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  merchant             Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  payments             Payment[]
+  recoveryCases        RecoveryCase[]
+
+  @@unique([merchantId, razorpayCustomerId])
+  @@index([merchantId])
+  @@index([email])
+}
+
+model Payment {
+  id                 String   @id @default(cuid())
+  merchantId         String
+  customerId         String
+  razorpayPaymentId  String   @unique
+  razorpayOrderId    String
+  amount             Int
+  currency           String   @default("INR")
+  paymentMethod      String
+  status             String
+  failureCode        String?
+  failureDescription String?
+  failureCategory    FailureCategory?
+  retryCount         Int      @default(0)
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  merchant           Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer           Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  attempts           PaymentAttempt[]
+  recoveryCase       RecoveryCase?
+  failureEvents      FailureEvent[]
+
+  @@index([merchantId])
+  @@index([customerId])
+  @@index([status])
+  @@index([failureCategory])
+  @@index([createdAt])
+}
+
+model PaymentAttempt {
+  id                String   @id @default(cuid())
+  paymentId         String
+  attemptNumber     Int
+  amount            Int
+  status            String
+  failureCode       String?
+  failureCategory   FailureCategory?
+  gatewayResponse   Json?
+  executedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  payment           Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, attemptNumber])
+  @@index([paymentId])
+}
+
+model FailureEvent {
+  id              String           @id @default(cuid())
+  paymentId       String
+  failureCode     String
+  failureReason   String
+  category        FailureCategory
+  confidence      Float
+  evidence        String[]
+  evidenceType    String
+  severity        String
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+
+  payment         Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([category])
+}
+
+model RecoveryCase {
+  id                String             @id @default(cuid())
+  merchantId        String
+  paymentId         String             @unique
+  customerId        String
+  orderId           String
+  amount            Int
+  currency          String             @default("INR")
+  paymentMethod     String
+  failureCode       String
+  failureCategory   FailureCategory?
+  status            RecoveryCaseStatus @default(NEW)
+  retryCount        Int                @default(0)
+  maxRetries        Int                @default(3)
+  recoverabilityScore Int?
+  requiresApproval  Boolean            @default(false)
+  approvalStatus    ApprovalStatus?
+  approvalRequestedAt DateTime?
+  approvalResolvedAt  DateTime?
+  approvedBy        String?
+  completedAt       DateTime?
+  recoveredAmount   Int                @default(0)
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  merchant          Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  payment           Payment            @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  autopsyResult     AutopsyResult?
+  policyDecision    PolicyDecision?
+  actions           RecoveryAction[]
+  auditEvents       AuditEvent[]
+  approvalRequests  ApprovalRequest[]
+
+  @@index([merchantId])
+  @@index([customerId])
+  @@index([status])
+  @@index([failureCategory])
+  @@index([createdAt])
+}
+
+model AutopsyResult {
+  id                      String   @id @default(cuid())
+  caseId                  String   @unique
+  failureCategory         FailureCategory
+  rootCauseHypothesis     String
+  confidence              Float
+  evidence                String[]
+  evidenceType            String
+  severity                String
+  recoverability          String
+  recommendedNextStep     RecoveryActionType
+  explanation             String
+  supportingTransactionHistory Json?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  recoveryCase            RecoveryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model PolicyDecision {
+  id                    String   @id @default(cuid())
+  caseId                String   @unique
+  allowed               Boolean
+  action                RecoveryActionType
+  reason                String
+  policyRulesApplied    String[]
+  requiresApproval      Boolean
+  approvalReason        String?
+  stopConditions        String[]
+  cooldownUntil         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  recoveryCase          RecoveryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model RecoveryAction {
+  id                String                @id @default(cuid())
+  caseId            String
+  type              RecoveryActionType
+  payload           Json
+  reason            String
+  scheduledAt       DateTime?
+  executedAt        DateTime?
+  status            RecoveryActionStatus  @default(pending)
+  result            Json?
+  idempotencyKey    String                @unique
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  recoveryCase      RecoveryCase          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([status])
+  @@index([idempotencyKey])
+}
+
+model AuditEvent {
+  id              String      @id @default(cuid())
+  caseId          String
+  timestamp       DateTime    @default(now())
+  actor           AuditActor
+  action          String
+  inputContext    Json
+  decision        Json
+  evidence        String[]?
+  policyUsed      String?
+  outcome         Json?
+  metadata        Json?
+
+  recoveryCase    RecoveryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([timestamp])
+  @@index([actor])
+}
+
+model PolicyRule {
+  id          String   @id @default(cuid())
+  merchantId  String
+  name        String
+  description String
+  condition   Json
+  action      RecoveryActionType
+  priority    Int      @default(0)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([enabled])
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  caseId          String?
+  customerId      String
+  merchantId      String
+  type            String
+  channel         String
+  subject         String
+  content         String
+  status          String   @default("pending")
+  externalId      String?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  failedAt        DateTime?
+  error           String?
+  createdAt       DateTime @default(now())
+
+  @@index([caseId])
+  @@index([customerId])
+  @@index([merchantId])
+  @@index([status])
+}
+
+model AgentRun {
+  id              String   @id @default(cuid())
+  caseId          String
+  status          String   @default("running")
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  steps           Json
+  error           String?
+  metadata        Json?
+
+  @@index([caseId])
+  @@index([status])
+}
+
+model ApprovalRequest {
+  id              String        @id @default(cuid())
+  caseId          String
+  actionType      RecoveryActionType
+  requestedBy     String
+  requestedAt     DateTime      @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  status          ApprovalStatus @default(pending)
+  reason          String
+  resolutionNote  String?
+  metadata        Json?
+
+  recoveryCase    RecoveryCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([status])
+}
+
+model MerchantIncident {
+  id                     String        @id @default(cuid())
+  merchantId             String
+  type                   IncidentType
+  paymentMethod          String
+  normalFailureRate      Float
+  currentFailureRate     Float
+  affectedPayments       Int
+  estimatedRevenueAtRisk Int
+  potentialCause         String
+  detectedAt             DateTime      @default(now())
+  resolvedAt             DateTime?
+  status                 IncidentStatus @default(active)
+  recommendedActions     RecoveryActionType[]
+  metadata               Json?
+
+  merchant               Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([detectedAt])
+}
+
+model SimulationRun {
+  id                String   @id @default(cuid())
+  merchantId        String
+  name              String
+  description       String?
+  totalPayments     Int
+  totalFailedValue  Int
+  baselineRecovered Int
+  aiRecovered       Int
+  improvement       Float
+  baselineMetrics   Json
+  aiMetrics         Json
+  cases             Json
+  status            String   @default("completed")
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+
+  @@index([merchantId])
+  @@index([createdAt])
+}
